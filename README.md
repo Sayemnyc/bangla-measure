@@ -1,5 +1,7 @@
 # Bangla Measure · বাংলা মাপ
 
+**Live app: https://sayemnyc.github.io/bangla-measure/**
+
 A small, offline web app for two everyday Bangladeshi tasks:
 
 1. **Land & area converter**: type `5 kata`, `১০ শতাংশ`, `2 bigha` or `1200 sq ft` and see the
