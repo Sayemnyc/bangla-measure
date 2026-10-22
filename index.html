@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0f766e">
+<title>Bangla Measure</title>
+<style>
+  :root {
+    --bg: #f6f7f5; --card: #ffffff; --text: #1c2321; --muted: #5f6b67;
+    --line: #e1e5e2; --accent: #0f766e; --accent-ink: #ffffff;
+    --warn-bg: #fff6dd; --warn-line: #e8c15a; --warn-text: #6b4e00;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121615; --card: #1b2120; --text: #e8eeec; --muted: #9aa7a3;
+      --line: #2b3331; --accent: #2bb3a3; --accent-ink: #062320;
+      --warn-bg: #2f2710; --warn-line: #7a6320; --warn-text: #f1d78a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 17px/1.5 system-ui, -apple-system, "Segoe UI", "Noto Sans Bengali", "Hind Siliguri", sans-serif;
+  }
+  main { max-width: 680px; margin: 0 auto; padding: 16px 16px 48px; }
+  h1 { font-size: 1.5rem; margin: 8px 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 16px; font-size: .95rem; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .tabs button {
+    flex: 1; padding: 12px 4px; font: inherit; font-weight: 600; border-radius: 12px;
+    border: 1px solid var(--line); background: var(--card); color: var(--text); cursor: pointer;
+  }
+  .tabs button[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; margin-bottom: 16px; }
+  label { display: block; font-weight: 600; margin: 0 0 6px; font-size: .95rem; }
+  input, select {
+    width: 100%; font: inherit; font-size: 1.25rem; padding: 12px 14px; border-radius: 12px;
+    border: 1px solid var(--line); background: var(--bg); color: var(--text); min-height: 52px;
+  }
+  select { font-size: 1.05rem; }
+  input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+  @media (max-width: 420px) { .row { grid-template-columns: 1fr; } }
+  .row.btns { grid-template-columns: 1fr 1fr; }
+  .hint { color: var(--muted); font-size: .85rem; margin: 6px 0 0; }
+  .warn {
+    background: var(--warn-bg); border: 1px solid var(--warn-line); color: var(--warn-text);
+    border-radius: 12px; padding: 10px 12px; margin: 12px 0 0; font-size: .92rem;
+  }
+  .err { color: #c0392b; font-size: .92rem; margin: 8px 0 0; }
+  ul.results { list-style: none; margin: 0; padding: 0; }
+  ul.results li {
+    display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line);
+  }
+  ul.results li:last-child { border-bottom: 0; }
+  ul.results li.src { font-weight: 700; }
+  .names { flex: 1; min-width: 0; }
+  .names .bn { font-size: 1rem; }
+  .names .en { color: var(--muted); font-size: .85rem; }
+  .tag { font-size: .7rem; padding: 1px 6px; border-radius: 6px; background: var(--warn-bg); color: var(--warn-text); border: 1px solid var(--warn-line); margin-left: 4px; }
+  .val { text-align: right; font-variant-numeric: tabular-nums; }
+  .val .num { font-size: 1.1rem; font-weight: 600; word-break: break-all; }
+  .val .bnnum { color: var(--muted); font-size: .8rem; }
+  button.copy {
+    font: inherit; font-size: .8rem; padding: 8px 10px; border-radius: 10px; min-width: 56px;
+    border: 1px solid var(--line); background: var(--bg); color: var(--text); cursor: pointer;
+  }
+  .words { font-size: 1.15rem; margin: 0; }
+  .wordrow { display: flex; gap: 10px; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .wordrow:last-child { border-bottom: 0; }
+  .wordrow > div { flex: 1; }
+  .wordrow .lbl { color: var(--muted); font-size: .8rem; }
+  button.copy.big { font-size: .95rem; padding: 12px; min-height: 48px; width: 100%; }
+  .fx-copy { color: var(--muted); font-size: .9rem; margin-top: 6px; min-height: 1.2em; }
+  [hidden] { display: none !important; }
+  footer { color: var(--muted); font-size: .8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Bangla Measure</h1>
+  <p class="sub">জমির মাপ ও টাকার কথায় রূপান্তর · Land units &amp; Taka in words</p>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" id="tab-land" aria-selected="true" aria-controls="panel-land">জমি · Land</button>
+    <button role="tab" id="tab-taka" aria-selected="false" aria-controls="panel-taka">টাকা · Taka</button>
+    <button role="tab" id="tab-fx" aria-selected="false" aria-controls="panel-fx">ডলার · USD</button>
+  </div>
+
+  <section id="panel-land" role="tabpanel" aria-labelledby="tab-land">
+    <div class="card">
+      <label for="land-in">পরিমাণ · Amount</label>
+      <input id="land-in" inputmode="text" autocomplete="off" placeholder="যেমন: 5 kata, ১০ শতাংশ, 1200 sq ft">
+      <div class="row">
+        <div>
+          <label for="land-unit">একক · Unit</label>
+          <select id="land-unit"></select>
+        </div>
+        <div>
+          <label for="land-region">অঞ্চল · Region</label>
+          <select id="land-region"></select>
+        </div>
+      </div>
+      <p class="hint">লেখায় একক থাকলে সেটিই ব্যবহার হবে। If you type a unit, it overrides the dropdown.</p>
+      <p class="err" id="land-err" hidden></p>
+      <p class="warn" id="land-warn" hidden></p>
+    </div>
+    <div class="card" id="land-out" hidden>
+      <ul class="results" id="land-results"></ul>
+    </div>
+  </section>
+
+  <section id="panel-taka" role="tabpanel" aria-labelledby="tab-taka" hidden>
+    <div class="card">
+      <label for="taka-in">টাকার পরিমাণ · Amount (Taka)</label>
+      <input id="taka-in" inputmode="decimal" autocomplete="off" placeholder="যেমন: 1250050.75 বা ১২৫০০৫০">
+      <p class="err" id="taka-err" hidden></p>
+    </div>
+    <div class="card" id="taka-out" hidden>
+      <div class="wordrow"><div><div class="lbl">বাংলা</div><p class="words" id="taka-bn"></p></div><button class="copy" data-copy="taka-bn">Copy</button></div>
+      <div class="wordrow"><div><div class="lbl">English</div><p class="words" id="taka-en"></p></div><button class="copy" data-copy="taka-en">Copy</button></div>
+      <div class="wordrow"><div><div class="lbl">সংখ্যা · Figure</div><p class="words" id="taka-fig"></p></div><button class="copy" data-copy="taka-fig">Copy</button></div>
+      <div class="wordrow"><div><div class="lbl">ডলার · US Dollar <span id="taka-rate"></span></div><p class="words" id="taka-usd"></p></div><button class="copy" data-copy="taka-usd">Copy</button></div>
+    </div>
+  </section>
+
+  <section id="panel-fx" role="tabpanel" aria-labelledby="tab-fx" hidden>
+    <div class="card">
+      <label for="fx-bdt">টাকা · Taka (৳)</label>
+      <input id="fx-bdt" inputmode="decimal" autocomplete="off" placeholder="যেমন: 10000 বা ১০০০০">
+      <div class="fx-copy"><span id="fx-bdt-words"></span></div>
+      <label for="fx-usd" style="margin-top:16px">ডলার · US Dollar ($)</label>
+      <input id="fx-usd" inputmode="decimal" autocomplete="off" placeholder="e.g. 100">
+      <p class="err" id="fx-err" hidden></p>
+      <div class="row btns">
+        <button class="copy big" data-copy-input="fx-bdt">Copy ৳</button>
+        <button class="copy big" data-copy-input="fx-usd">Copy $</button>
+      </div>
+    </div>
+    <div class="card">
+      <label for="fx-rate">রেট · Rate: ১ ডলার = কত টাকা? (1 USD = ? BDT)</label>
+      <input id="fx-rate" inputmode="decimal" autocomplete="off">
+      <div class="row btns">
+        <button class="copy big" id="fx-live">লাইভ রেট · Live rate</button>
+        <button class="copy big" id="fx-reset">ডিফল্ট · Default</button>
+      </div>
+      <p class="hint" id="fx-status"></p>
+      <p class="warn">⚠ এটি আনুমানিক মধ্যবর্তী রেট; ব্যাংক বা মানি এক্সচেঞ্জের রেট ভিন্ন হবে। · This is an approximate mid-market rate. Banks and exchange houses charge a different rate.</p>
+    </div>
+  </section>
+
+  <footer>Offline · কোনো তথ্য কোথাও পাঠানো হয় না · No data leaves your device</footer>
+</main>
+
+<!-- Core logic: no DOM access, so test.js can load and run it in Node. -->
+<script id="core">
+/* =====================================================================
+ * CONVERSION CONFIG — every factor lives here.
+ * Each unit's `sqft` is how many square feet ONE of that unit equals.
+ * Units marked `regional: true` take their value from REGIONS below
+ * instead of `sqft`.
+ * ===================================================================== */
+const CONFIG = {
+  units: {
+    sqft:      { bn: 'বর্গফুট',   en: 'Square feet',  sqft: 1 },
+    sqyd:      { bn: 'বর্গগজ',    en: 'Square yard',  sqft: 9 },                 // 1 sq yd = 9 sq ft
+    sqm:       { bn: 'বর্গমিটার', en: 'Square meter', sqft: 10.7639 },           // 1 m² = 10.7639 sq ft
+    ayutangsho:{ bn: 'অযুতাংশ',   en: 'Ayutangsho',   sqft: 4.356 },             // 1/100 decimal
+    decimal:   { bn: 'শতাংশ (শতক)', en: 'Decimal',    sqft: 435.6 },             // 1 decimal = 435.6 sq ft
+    chotak:    { bn: 'ছটাক',      en: 'Chhatak',      sqft: 45 },                // 1/16 kata
+    kata:      { bn: 'কাঠা',      en: 'Kata (Katha)', sqft: 720 },               // 1 kata = 720 sq ft
+    bigha:     { bn: 'বিঘা',      en: 'Bigha',        regional: true },          // see REGIONS
+    acre:      { bn: 'একর',       en: 'Acre',         sqft: 43560 },             // 100 decimal
+    hectare:   { bn: 'হেক্টর',    en: 'Hectare',      sqft: 107639 },            // 10,000 m²
+    gonda:     { bn: 'গণ্ডা',     en: 'Gonda',        regional: true },          // see REGIONS
+    kani:      { bn: 'কানি',      en: 'Kani',         regional: true },          // see REGIONS
+  },
+
+  // Regional units, in square feet. These genuinely differ by district/locality.
+  REGIONS: {
+    standard: {
+      bn: 'সাধারণ', en: 'Standard',
+      bigha: 14400,   // 20 kata × 720 — the national standard bigha
+      gonda: 864,     // TODO: unverified. Widely-circulated table: 1 gonda = 864 sq ft (≈1.98 decimal)
+      kani: 17280,    // TODO: unverified. 1 kani = 20 gonda = 17,280 sq ft (≈39.67 decimal)
+    },
+    chittagong: {
+      bn: 'চট্টগ্রাম', en: 'Chittagong',
+      bigha: 14400,   // TODO: unverified. Assumed same as standard; local usage may differ
+      gonda: 871.2,   // TODO: unverified. 1 gonda = 2 decimal (kani ÷ 20)
+      kani: 17424,    // TODO: unverified. 1 kani = 40 decimal = 17,424 sq ft
+    },
+    sylhet: {
+      bn: 'সিলেট', en: 'Sylhet',
+      bigha: 14400,   // TODO: unverified. Assumed same as standard; local usage may differ
+      gonda: 2613.6,  // TODO: unverified. Derived as kani ÷ 20
+      kani: 52272,    // TODO: unverified. 1 kani = 120 decimal = 52,272 sq ft (some sources differ)
+    },
+  },
+
+  // Words people type → unit key. Matched after lowercasing and removing spaces/dots.
+  aliases: {
+    sqft: ['sqft', 'sft', 'squarefeet', 'squarefoot', 'sqfeet', 'ft2', 'ft²', 'বর্গফুট', 'স্কয়ারফুট', 'স্কয়ারফিট', 'ফুট'],
+    sqyd: ['sqyd', 'sqyard', 'squareyard', 'squareyards', 'yd2', 'yd²', 'বর্গগজ', 'গজ'],
+    sqm: ['sqm', 'sqmeter', 'sqmetre', 'squaremeter', 'squaremetre', 'squaremeters', 'm2', 'm²', 'বর্গমিটার', 'মিটার'],
+    ayutangsho: ['ayutangsho', 'ajutangsho', 'ayutansho', 'অযুতাংশ'],
+    decimal: ['decimal', 'decimals', 'dec', 'shotangsho', 'shatangsho', 'shotok', 'shatak', 'satak', 'শতাংশ', 'শতক'],
+    chotak: ['chotak', 'chhatak', 'chatak', 'ছটাক'],
+    kata: ['kata', 'katha', 'kotha', 'katah', 'কাঠা', 'কাটা'],
+    bigha: ['bigha', 'bighas', 'biga', 'বিঘা'],
+    acre: ['acre', 'acres', 'ac', 'একর'],
+    hectare: ['hectare', 'hectares', 'ha', 'হেক্টর'],
+    gonda: ['gonda', 'ganda', 'gondas', 'গণ্ডা', 'গন্ডা'],
+    kani: ['kani', 'kanis', 'কানি'],
+  },
+};
+
+const BN_DIGITS = '০১২৩৪৫৬৭৮৯';
+const toAsciiDigits = s => String(s).replace(/[০-৯]/g, d => BN_DIGITS.indexOf(d));
+const toBnDigits = s => String(s).replace(/[0-9]/g, d => BN_DIGITS[d]);
+
+function sqftPerUnit(unit, region = 'standard') {
+  const u = CONFIG.units[unit];
+  return u.regional ? CONFIG.REGIONS[region][unit] : u.sqft;
+}
+
+function findUnit(text) {
+  const key = text.toLowerCase().replace(/[\s._]/g, '');
+  if (!key) return null;
+  for (const [unit, words] of Object.entries(CONFIG.aliases)) {
+    if (words.includes(key)) return unit;
+  }
+  return undefined; // text present but not recognised
+}
+
+// "5 kata" / "১০ শতাংশ" / "1,200 sq ft" / "2.5" → { value, unit|null }
+function parseLand(input) {
+  const s = toAsciiDigits(input).replace(/,/g, '').trim();
+  const m = s.match(/^(\d+(?:\.\d+)?|\.\d+)\s*(.*)$/);
+  if (!m) return null;
+  const unit = findUnit(m[2]);
+  if (unit === undefined) return null;
+  return { value: parseFloat(m[1]), unit };
+}
+
+function convertAll(value, unit, region = 'standard') {
+  const sqft = value * sqftPerUnit(unit, region);
+  const out = {};
+  for (const k of Object.keys(CONFIG.units)) out[k] = sqft / sqftPerUnit(k, region);
+  return out;
+}
+
+/* ---------- Taka in words ---------- */
+
+// Bangla 1–99 are irregular, so every word is listed (index = number).
+const BN_1_99 = ['',
+  'এক', 'দুই', 'তিন', 'চার', 'পাঁচ', 'ছয়', 'সাত', 'আট', 'নয়', 'দশ',
+  'এগারো', 'বারো', 'তেরো', 'চৌদ্দ', 'পনেরো', 'ষোলো', 'সতেরো', 'আঠারো', 'উনিশ', 'বিশ',
+  'একুশ', 'বাইশ', 'তেইশ', 'চব্বিশ', 'পঁচিশ', 'ছাব্বিশ', 'সাতাশ', 'আটাশ', 'ঊনত্রিশ', 'ত্রিশ',
+  'একত্রিশ', 'বত্রিশ', 'তেত্রিশ', 'চৌত্রিশ', 'পঁয়ত্রিশ', 'ছত্রিশ', 'সাঁইত্রিশ', 'আটত্রিশ', 'ঊনচল্লিশ', 'চল্লিশ',
+  'একচল্লিশ', 'বিয়াল্লিশ', 'তেতাল্লিশ', 'চুয়াল্লিশ', 'পঁয়তাল্লিশ', 'ছেচল্লিশ', 'সাতচল্লিশ', 'আটচল্লিশ', 'ঊনপঞ্চাশ', 'পঞ্চাশ',
+  'একান্ন', 'বায়ান্ন', 'তিপ্পান্ন', 'চুয়ান্ন', 'পঞ্চান্ন', 'ছাপ্পান্ন', 'সাতান্ন', 'আটান্ন', 'ঊনষাট', 'ষাট',
+  'একষট্টি', 'বাষট্টি', 'তেষট্টি', 'চৌষট্টি', 'পঁয়ষট্টি', 'ছেষট্টি', 'সাতষট্টি', 'আটষট্টি', 'ঊনসত্তর', 'সত্তর',
+  'একাত্তর', 'বাহাত্তর', 'তিয়াত্তর', 'চুয়াত্তর', 'পঁচাত্তর', 'ছিয়াত্তর', 'সাতাত্তর', 'আটাত্তর', 'ঊনআশি', 'আশি',
+  'একাশি', 'বিরাশি', 'তিরাশি', 'চুরাশি', 'পঁচাশি', 'ছিয়াশি', 'সাতাশি', 'অষ্টআশি', 'ঊননব্বই', 'নব্বই',
+  'একানব্বই', 'বিরানব্বই', 'তিরানব্বই', 'চুরানব্বই', 'পঁচানব্বই', 'ছিয়ানব্বই', 'সাতানব্বই', 'আটানব্বই', 'নিরানব্বই',
+];
+
+const EN_ONES = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten',
+  'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+const EN_TENS = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+const en1_99 = n => n < 20 ? EN_ONES[n] : (EN_TENS[Math.floor(n / 10)] + (n % 10 ? ' ' + EN_ONES[n % 10] : ''));
+
+// Indian grouping: crore (10^7), lakh (10^5), thousand, hundred. Amounts ≥ 100 crore
+// recurse, e.g. 150 crore → "একশত পঞ্চাশ কোটি".
+function groupWords(n, small, words) {
+  if (n === 0) return '';
+  const parts = [];
+  const crore = Math.floor(n / 1e7); n %= 1e7;
+  const lakh = Math.floor(n / 1e5); n %= 1e5;
+  const thousand = Math.floor(n / 1e3); n %= 1e3;
+  const hundred = Math.floor(n / 100); n %= 100;
+  if (crore) parts.push(groupWords(crore, small, words) + ' ' + words.crore);
+  if (lakh) parts.push(small(lakh) + ' ' + words.lakh);
+  if (thousand) parts.push(small(thousand) + ' ' + words.thousand);
+  if (hundred) parts.push(small(hundred) + words.hundred);
+  if (n) parts.push(small(n));
+  return parts.join(' ');
+}
+const BN_WORDS = { crore: 'কোটি', lakh: 'লক্ষ', thousand: 'হাজার', hundred: 'শত' };
+const EN_WORDS = { crore: 'Crore', lakh: 'Lakh', thousand: 'Thousand', hundred: ' Hundred' };
+const bnInt = n => groupWords(n, k => BN_1_99[k], BN_WORDS);
+const enInt = n => groupWords(n, en1_99, EN_WORDS);
+
+const MAX_TAKA = 1e15; // stays well inside Number.MAX_SAFE_INTEGER
+
+// "1,250,050.75" / "১২৫০০৫০" / "৳ 500" → { taka, paisa } or null
+function parseTaka(input) {
+  const s = toAsciiDigits(input).replace(/[,\s৳]|tk|taka|টাকা/gi, '');
+  const m = s.match(/^(\d*)(?:\.(\d*))?$/);
+  if (!m || (!m[1] && !m[2])) return null;
+  const taka = Number(m[1] || 0);
+  // Paisa from the string, not float math: ".5" → 50, ".755" → 76 (rounded).
+  const frac = (m[2] || '') + '000';
+  let paisa = Number(frac.slice(0, 2)) + (Number(frac[2]) >= 5 ? 1 : 0);
+  let t = taka;
+  if (paisa === 100) { t += 1; paisa = 0; }
+  if (t >= MAX_TAKA) return null;
+  return { taka: t, paisa };
+}
+
+function takaWords(input) {
+  const p = typeof input === 'number' ? parseTaka(String(input)) : parseTaka(input);
+  if (!p) return null;
+  const { taka, paisa } = p;
+  let bn, en;
+  if (taka === 0 && paisa === 0) { bn = 'শূন্য টাকা'; en = 'Zero Taka'; }
+  else if (taka === 0) { bn = BN_1_99[paisa] + ' পয়সা'; en = en1_99(paisa) + ' Paisa'; }
+  else {
+    bn = bnInt(taka) + ' টাকা' + (paisa ? ' ' + BN_1_99[paisa] + ' পয়সা' : '');
+    en = enInt(taka) + ' Taka' + (paisa ? ' and ' + en1_99(paisa) + ' Paisa' : '');
+  }
+  return {
+    bn: bn + ' মাত্র',
+    en: en + ' Only',
+    figure: taka.toLocaleString('en-IN') + (paisa ? '.' + String(paisa).padStart(2, '0') : '') ,
+    taka, paisa,
+  };
+}
+
+/* ---------- Taka ⇄ Dollar ---------- */
+
+// Fallback BDT per 1 USD, used until the user edits it or fetches a live rate.
+// Mid-market rate from open.er-api.com on 21 Oct 2026; refresh when publishing.
+const DEFAULT_USD_RATE = 123.7;
+// Free, keyless rate API. Only called when the user taps "Live rate"; sends no user data.
+const RATE_API = 'https://open.er-api.com/v6/latest/USD';
+
+// "১০,০০০" / "$ 100" / "৳500.5" → number, or null
+function parseAmount(input) {
+  const s = toAsciiDigits(input).replace(/[,\s৳$]|tk|taka|টাকা|usd/gi, '');
+  return /^(\d+\.?\d*|\.\d+)$/.test(s) ? parseFloat(s) : null;
+}
+const round2 = x => Math.round(x * 100) / 100;
+const bdtToUsd = (bdt, rate) => round2(bdt / rate);
+const usdToBdt = (usd, rate) => round2(usd * rate);
+
+// Readable number: up to 4 decimals, Indian grouping.
+function fmt(x) {
+  if (!isFinite(x)) return '—';
+  const abs = Math.abs(x);
+  const digits = abs >= 1 ? 4 : abs >= 0.0001 ? 6 : 10;
+  return x.toLocaleString('en-IN', { maximumFractionDigits: digits });
+}
+</script>
+
+<script>
+const $ = id => document.getElementById(id);
+
+// Tabs
+for (const [tab, panel] of [['tab-land', 'panel-land'], ['tab-taka', 'panel-taka'], ['tab-fx', 'panel-fx']]) {
+  $(tab).addEventListener('click', () => {
+    for (const t of document.querySelectorAll('[role=tab]')) t.setAttribute('aria-selected', t.id === tab);
+    for (const p of document.querySelectorAll('[role=tabpanel]')) p.hidden = p.id !== panel;
+    $(panel).querySelector('input').focus();
+  });
+}
+
+// Selects
+for (const [k, u] of Object.entries(CONFIG.units)) {
+  $('land-unit').add(new Option(`${u.bn} · ${u.en}${u.regional ? ' ⚠' : ''}`, k));
+}
+$('land-unit').value = 'decimal';
+for (const [k, r] of Object.entries(CONFIG.REGIONS)) $('land-region').add(new Option(`${r.bn} · ${r.en}`, k));
+
+function updateLand() {
+  const raw = $('land-in').value.trim();
+  const region = $('land-region').value;
+  $('land-err').hidden = true;
+  $('land-warn').hidden = true;
+  $('land-out').hidden = true;
+  if (!raw) return;
+  const p = parseLand(raw);
+  if (!p) {
+    $('land-err').textContent = 'বুঝতে পারিনি। উদাহরণ: "5 kata", "১০ শতাংশ" · Couldn\'t read that. Try "5 kata" or "1200 sq ft".';
+    $('land-err').hidden = false;
+    return;
+  }
+  const unit = p.unit || $('land-unit').value;
+  if (p.unit) $('land-unit').value = p.unit;
+  const res = convertAll(p.value, unit, region);
+  const r = CONFIG.REGIONS[region];
+
+  if (CONFIG.units[unit].regional || region !== 'standard') {
+    $('land-warn').textContent =
+      `⚠ ${CONFIG.units[unit].regional ? `"${CONFIG.units[unit].bn}" একটি আঞ্চলিক একক — ` : ''}বিঘা, গণ্ডা ও কানির মাপ এলাকাভেদে ভিন্ন। ` +
+      `এখানে "${r.bn}" মান ব্যবহার হয়েছে; দলিল বা স্থানীয় ভূমি অফিসে যাচাই করুন। ` +
+      `· Bigha, gonda and kani vary by area. Using "${r.en}" values — verify locally before relying on them.`;
+    $('land-warn').hidden = false;
+  }
+
+  const ul = $('land-results');
+  ul.replaceChildren();
+  for (const [k, u] of Object.entries(CONFIG.units)) {
+    const li = document.createElement('li');
+    if (k === unit) li.className = 'src';
+    const text = fmt(res[k]);
+    li.innerHTML = `
+      <div class="names"><div class="bn"></div><div class="en"></div></div>
+      <div class="val"><div class="num"></div><div class="bnnum"></div></div>
+      <button class="copy">Copy</button>`;
+    li.querySelector('.bn').textContent = u.bn;
+    if (u.regional) li.querySelector('.bn').insertAdjacentHTML('beforeend', '<span class="tag">আঞ্চলিক</span>');
+    li.querySelector('.en').textContent = u.en + (u.regional ? ` (regional · ${r.en})` : '');
+    li.querySelector('.num').textContent = text;
+    li.querySelector('.bnnum').textContent = toBnDigits(text);
+    li.querySelector('.copy').addEventListener('click', e => copy(`${text} ${u.en} (${u.bn})`, e.target));
+    ul.append(li);
+  }
+  $('land-out').hidden = false;
+}
+for (const id of ['land-in', 'land-unit', 'land-region']) $(id).addEventListener('input', updateLand);
+
+function updateTaka() {
+  const raw = $('taka-in').value.trim();
+  $('taka-err').hidden = true;
+  $('taka-out').hidden = true;
+  if (!raw) return;
+  const w = takaWords(raw);
+  if (!w) {
+    $('taka-err').textContent = 'সঠিক সংখ্যা লিখুন (সর্বোচ্চ ১০ লক্ষ কোটির কম) · Enter a valid amount below 10 lakh crore.';
+    $('taka-err').hidden = false;
+    return;
+  }
+  $('taka-bn').textContent = w.bn;
+  $('taka-en').textContent = w.en;
+  $('taka-fig').textContent = '৳ ' + w.figure + '  (' + toBnDigits(w.figure) + ')';
+  // Uses the rate from the USD tab, so a custom or live rate applies here too.
+  const rate = fxRate();
+  $('taka-usd').textContent = rate
+    ? '$ ' + bdtToUsd(w.taka + w.paisa / 100, rate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : '—';
+  $('taka-rate').textContent = rate ? `(১ ডলার = ৳${toBnDigits(rate)} · $1 = ৳${rate})` : '';
+  $('taka-out').hidden = false;
+}
+$('taka-in').addEventListener('input', updateTaka);
+for (const b of document.querySelectorAll('[data-copy]')) {
+  b.addEventListener('click', () => copy($(b.dataset.copy).textContent, b));
+}
+
+// Currency: whichever field was typed in last is the source; the other is computed.
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+};
+let fxSource = 'fx-bdt';
+function fxRate() { return parseAmount($('fx-rate').value); }
+function setRate(rate, status) {
+  $('fx-rate').value = rate;
+  store.set('fxRate', rate);
+  store.set('fxStatus', status);
+  $('fx-status').textContent = status;
+  updateFx();
+}
+function updateFx() {
+  updateTaka(); // keep the Taka tab's dollar row in step with the rate
+  const src = $(fxSource), dst = $(fxSource === 'fx-bdt' ? 'fx-usd' : 'fx-bdt');
+  const rate = fxRate();
+  $('fx-err').hidden = true;
+  $('fx-bdt-words').textContent = '';
+  if (!rate) { $('fx-err').textContent = 'সঠিক রেট লিখুন · Enter a valid rate.'; $('fx-err').hidden = false; return; }
+  if (!src.value.trim()) { dst.value = ''; return; }
+  const v = parseAmount(src.value);
+  if (v === null) { $('fx-err').textContent = 'সঠিক সংখ্যা লিখুন · Enter a valid amount.'; $('fx-err').hidden = false; dst.value = ''; return; }
+  dst.value = fxSource === 'fx-bdt' ? bdtToUsd(v, rate) : usdToBdt(v, rate);
+  const w = takaWords($('fx-bdt').value);
+  if (w) $('fx-bdt-words').textContent = w.bn;
+}
+for (const id of ['fx-bdt', 'fx-usd']) $(id).addEventListener('input', () => { fxSource = id; updateFx(); });
+$('fx-rate').addEventListener('input', () => {
+  if (fxRate()) { store.set('fxRate', $('fx-rate').value); store.set('fxStatus', 'নিজে দেওয়া রেট · Custom rate'); $('fx-status').textContent = 'নিজে দেওয়া রেট · Custom rate'; }
+  updateFx();
+});
+$('fx-reset').addEventListener('click', () => setRate(DEFAULT_USD_RATE, 'ডিফল্ট রেট (আনুমানিক) · Default rate (approximate)'));
+$('fx-live').addEventListener('click', async () => {
+  $('fx-status').textContent = 'লোড হচ্ছে… · Loading…';
+  try {
+    const data = await (await fetch(RATE_API)).json();
+    const rate = data && data.rates && data.rates.BDT;
+    if (!rate) throw new Error('no rate');
+    const when = new Date(data.time_last_update_unix * 1000).toLocaleDateString('en-GB');
+    setRate(round2(rate), `লাইভ রেট, ${toBnDigits(when)} · Live rate from open.er-api.com, ${when}`);
+  } catch {
+    $('fx-status').textContent = 'রেট আনা যায়নি — ইন্টারনেট সংযোগ দেখুন; আগের রেট রাখা হলো। · Couldn\'t fetch a rate (offline?). Kept the current rate.';
+  }
+});
+for (const b of document.querySelectorAll('[data-copy-input]')) {
+  b.addEventListener('click', () => { const v = $(b.dataset.copyInput).value; if (v) copy(v, b); });
+}
+$('fx-rate').value = store.get('fxRate') || DEFAULT_USD_RATE;
+$('fx-status').textContent = store.get('fxStatus') || 'ডিফল্ট রেট (আনুমানিক) · Default rate (approximate)';
+
+async function copy(text, btn) {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    // ponytail: execCommand fallback for file:// and older WebViews where Clipboard API is blocked
+    const ta = Object.assign(document.createElement('textarea'), { value: text });
+    document.body.append(ta); ta.select(); document.execCommand('copy'); ta.remove();
+  }
+  const old = btn.textContent;
+  btn.textContent = '✓';
+  setTimeout(() => (btn.textContent = old), 1200);
+}
+</script>
+</body>
+</html>
